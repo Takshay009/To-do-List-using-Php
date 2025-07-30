@@ -4,8 +4,8 @@
 
 // Initialize variables for insert, update, and delete operations
 $insert = false;
-// $update = false;
-// $delete = false;
+$update = false;
+$delete = false;
 // Connect to the Database 
 $servername = "localhost";
 $username = "root";
@@ -17,11 +17,36 @@ $conn = mysqli_connect($servername, $username, $password, $database);
 if (!$conn){
     die("Sorry we failed to connect: ". mysqli_connect_error());
 }
+if(isset($_GET['delete'])){
+    $sno = $_GET['delete'];
+    $sql = "DELETE FROM `notes` WHERE `notes`.`sno` = '$sno'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        $delete = true;
+    }
+}
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+// exit();
+if ($_SERVER['REQUEST_METHOD'] == 'POST'){
 
-    // Insert the notess into the database
+    if (isset( $_POST['snoEdit'])){
+   
+    $sno = $_POST['snoEdit'];
+    $title = $_POST['titleEdit']; 
+    $description = $_POST['descriptionEdit'];
 
+    $sql = "UPDATE `notes` SET `title` = '$title' , `description` = '$description' WHERE `notes`.`sno` = '$sno'";
+    $result = mysqli_query($conn, $sql);
+    if ($result) {
+        // echo "notess added successfully.";
+        $update = true;
+    } else {
+        echo "Error adding notes: " . mysqli_error($conn);
+    }
+ }
+    else{
+    // Insert the notes into the database (sanitize to prevent SQL injection & undefined index warnings)
+    
     $title = $_POST['title'];
     $description = $_POST['description'];
 
@@ -34,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         echo "Error adding notes: " . mysqli_error($conn);
     }
+}
 }
 
 ?>
@@ -52,13 +78,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <link rel="stylesheet" href="//cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
 
-
+    <style>
+        .header {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
 
 </head>
 
 
 <body>
 
+    <!-- modal for edit notes -->
+
+    <div class="modal" tabindex="-1" id="editModal" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class=" modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Note</h5>
+                </div>
+                <!-- modal body -->
+
+                <form action="/To-do-List-using-Php/index.php" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="snoEdit" id="snoEdit">
+                        <div class="mb-3">
+                            <label for="title" class="form-label"> Edit Title</label>
+                            <input type="text" class="form-control" id="titleEdit" aria-describedby="emailHelp"
+                                name="titleEdit">
+                        </div>
+                        <div class="mb-3">
+
+                            <label for="description" class="form-label">Edit Description</label>
+                            <textarea class="form-control" placeholder="Leave a notes here" id="descriptionEdit"
+                                name="descriptionEdit"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update notes</button>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>  
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <!-- Navbar -->
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -100,6 +167,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>';
                 }
+
+                if ($update) {
+                    echo '<div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>Success!</strong> Your notes has been updated successfully.
+                       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>';
+                    }
+                if ($delete) {
+                    echo '<div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>Success!</strong> Your notes has been deleted successfully.
+                       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>';
+                    }
             ?>
 
     <!-- form -->
@@ -158,7 +238,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <th scope='row'>". $sno . "</th>
                     <td>". $row['title'] . "</td>
                     <td>". $row['description'] . "</td>
-                    <td> <button class='edit btn btn-sm btn-primary'>Edit</button> </td>
+                    <td> <button class='edit btn btn-sm btn-primary' id=".$row['sno'].">Edit</button>
+                         <button class='delete btn btn-sm btn-primary' id=d".$row['sno'].">Delete</button> </td>
                 </tr>";
 
         }
@@ -191,15 +272,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         edits = document.getElementsByClassName('edit');
         Array.from(edits).forEach((element) => {
             element.addEventListener("click", (e) => {
-                console.log("Edit", );
-                tr = e.target.parentNode.parentNode;
+                // Get the table row of the clicked button
+                const tr = e.target.closest('tr');
+
+                // Fetch current title & description
                 title = tr.getElementsByTagName("td")[0].innerText;
                 description = tr.getElementsByTagName("td")[1].innerText;
-                console.log(title, description);
 
-            })
-        })
-    </script>
+                // Fill the modal inputs
+                document.getElementById('titleEdit').value = title;
+                document.getElementById('descriptionEdit').value = description;
+                document.getElementById('snoEdit').value = e.target.id; // record row id for update
+
+                // Show the modal
+                $('#editModal').modal('show');
+            });
+        });
+
+        deletes = document.getElementsByClassName('delete');
+        Array.from(deletes).forEach((element) => {
+            element.addEventListener("click", (e) => {
+                // Get the table row of the clicked button
+                tr = e.target.closest('tr');
+
+                // Fetch current title & description
+                title = tr.getElementsByTagName("td")[0].innerText;
+                description = tr.getElementsByTagName("td")[1].innerText;
+
+                sno = e.target.id.substr(1,);
+
+                // Fill the modal inputs
+                if (confirm("Are you sure you want to delete this note?")) {
+                    console.log("yes");
+                    window.location = `/To-do-List-using-Php/index.php?delete=${sno}`;
+                }
+                else {
+                    console.log("no");
+                }
+
+            });
+        });
+    </script>ś
 
 </body>
 
