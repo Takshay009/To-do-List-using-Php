@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 ?>
 
-+<!-- html starts from here  -->
+<!-- html starts from here  -->
 <!doctype html>
 
 <head>
@@ -53,15 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="//cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
 
 
-<script>
-    document.getElementsByClassName('edit');
-    Array.from(edit).forEach((element)=>
-    {
-        element.addEventListener("click",(e)=>{
-            console.log("Edit",e);            
-        })
-    })
-</script>
+
 </head>
 
 
@@ -166,12 +158,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <th scope='row'>". $sno . "</th>
                     <td>". $row['title'] . "</td>
                     <td>". $row['description'] . "</td>
-                    <td> <a class='edit' href='/del'>Delete</a> <a href='/Edit'>Edit</a> </td>
+                    <td> <button class='edit btn btn-sm btn-primary'>Edit</button> </td>
                 </tr>";
 
         }
       ?>
-
 
 
             </tbody>
@@ -195,6 +186,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <!-- implement -->
     <script>
         let table = new DataTable('#myTable');
+    </script>
+    <script>
+        edits = document.getElementsByClassName('edit');
+        Array.from(edits).forEach((element) => {
+            element.addEventListener("click", (e) => {
+                console.log("Edit", );
+                tr = e.target.parentNode.parentNode;
+                title = tr.getElementsByTagName("td")[0].innerText;
+                description = tr.getElementsByTagName("td")[1].innerText;
+                console.log(title, description);
+
+            })
+        })
     </script>
 
 </body>
